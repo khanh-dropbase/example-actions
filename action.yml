@@ -6,7 +6,7 @@ inputs:
     description: your lovely name
     required: true
 outputs:
-  greating:
+  greeting:
     required: true
 runs:
   using: composite
@@ -15,5 +15,5 @@ runs:
       shell: bash
       run: |
         GREETING="Hello ${{ inputs.name }}"
-        echo "greating=$GREETING" >> $GITHUB_OUTPUT
+        echo "greeting=$GREETING" >> $GITHUB_OUTPUT
 
