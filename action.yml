@@ -8,10 +8,12 @@ inputs:
 outputs:
   greeting:
     description: your greeting sentence
+    value: ${{ steps.say-hello.outputs.greeting }}
 runs:
-  using: composite
+  using: "composite"
   steps:
     - name: say hello
+      id: say-hello
       shell: bash
       run: |
         GREETING="Hello ${{ inputs.name }}"
