@@ -33,6 +33,7 @@ runs:
         tags: myrepo/${{ inputs.appName }}:latest
 
     - name: Test the docker image
+      shell: bash
       run: |
         docker run --rm myrepo/${{ inputs.appName }}:latest
 
