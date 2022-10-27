@@ -5,6 +5,9 @@ inputs:
   name:
     description: your lovely name
     required: true
+  appName:
+    description: your docker app name
+    required: true
 outputs:
   greeting:
     description: your greeting sentence
@@ -19,3 +22,23 @@ runs:
         GREETING="Hello ${{ inputs.name }}"
         echo "greeting=$GREETING" >> $GITHUB_OUTPUT
 
+    - name: Set up Docker Buildx for building docker images
+      uses: docker/setup-buildx-action@v1
+
+    - name: Build and export to Docker
+      uses: docker/build-push-action@v3
+      with:
+        context: .
+        load: true
+        tags: myrepo/${{ inputs.appName }}:latest
+
+    - name: Test the docker image
+      run: |
+        docker run --rm myrepo/${{ inputs.appName }}:latest
+
+    - name: Build and push docker image
+      uses: docker/build-push-action@v3
+      with:
+        context: .
+        push: false
+        tags: myrepo/${{ inputs.appName }}:latest
