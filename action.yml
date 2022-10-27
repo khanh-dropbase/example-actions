@@ -7,7 +7,7 @@ inputs:
     required: true
 outputs:
   greeting:
-    required: true
+    description: your greeting sentence
 runs:
   using: composite
   steps:
