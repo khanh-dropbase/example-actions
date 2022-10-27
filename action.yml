@@ -1,0 +1,19 @@
+name: Example composite action
+description: This is an example of creating composite action
+
+inputs:
+  name:
+    description: your lovely name
+    required: true
+outputs:
+  greating:
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: say hello
+      shell: bash
+      run: |
+        GREETING="Hello ${{ inputs.name }}"
+        echo "greating=$GREETING" >> $GITHUB_OUTPUT
+
