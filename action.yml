@@ -21,7 +21,7 @@ runs:
   steps:
     - name: say hello
       id: say-hello
-      if: inputs.sayHello
+      if: ${{ inputs.sayHello }} == true
       shell: bash
       run: |
         GREETING="Hello ${{ inputs.name }}"
