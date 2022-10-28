@@ -5,6 +5,10 @@ inputs:
   name:
     description: your lovely name
     required: true
+  sayHello:
+    description: whether you want a greeting
+    required: false
+    default: true
   appName:
     description: your docker app name
     required: true
@@ -17,6 +21,7 @@ runs:
   steps:
     - name: say hello
       id: say-hello
+      if: inputs.sayHello
       shell: bash
       run: |
         GREETING="Hello ${{ inputs.name }}"
