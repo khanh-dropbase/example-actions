@@ -3,14 +3,14 @@ description: This is an example of creating composite action
 
 inputs:
   appName:
-    description: Your docker app name
+    description: Application name
     required: true
   containerRegistryUrl:
     description: GCP container registry url
     required: false
     default: europe-west3-docker.pkg.dev
   containerRegistryGcpProject:
-    description: The GCP project that hosts our container image registry
+    description: The GCP project of container image registry
     required: false
     default: my-project
 outputs:
@@ -26,7 +26,7 @@ runs:
       run: |
         base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
 
-        ## Default image tag is "latest"
+        ## Default image tag is 'latest'
         ##
         tags="${base}:latest"
 
@@ -73,8 +73,7 @@ runs:
         ##
         echo "[INFO] tags: ${tags}"
 
-        ## Store image tags information in IMAGE_TAGS
-        ## environment variable
+        ## Set tags output
         ##
         echo "tags<<EOF" >> $GITHUB_OUTPUT
         echo "$tags" >> $GITHUB_OUTPUT
@@ -89,3 +88,5 @@ runs:
         context: .
         push: false
         tags: ${{ steps.image-tags.outputs.tags }}
+        cache-from: type=registry,ref=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}:buildcache
+        cache-to: type=registry,ref=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}:buildcache,mode=max
