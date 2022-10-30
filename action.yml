@@ -76,10 +76,10 @@ runs:
         ## Store image tags information in IMAGE_TAGS
         ## environment variable
         ##
-        echo "IMAGE_TAGS<<EOF" >> $GITHUB_ENV
-        echo "$tags" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
-        
+        echo "tags<<EOF" >> $GITHUB_OUTPUT
+        echo "$tags" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
         echo "tags=${tags}" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx for building docker images
@@ -90,4 +90,4 @@ runs:
       with:
         context: .
         push: false
-        tags: ${{ env.IMAGE_TAGS }}
+        tags: ${{ steps.image-tags.outputs.tags }}
