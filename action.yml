@@ -107,5 +107,5 @@ runs:
         context: .
         push: false
         tags: ${{ steps.image-tags.outputs.tags }}
-        cache-from: ${{ inputs.set-build-cache.cache_from }}
-        cache-to: ${{ inputs.set-build-cache.cache_to }}
+        cache-from: ${{ steps.set-build-cache.outputs.cache_from }}
+        cache-to: ${{ steps.set-build-cache.outputs.cache_to }}
