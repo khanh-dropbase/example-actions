@@ -60,7 +60,7 @@ runs:
 
     - name: Extract build artifact
       shell: bash
-      if: inputs.buildArtifactType != 'none'
+      if: inputs.buildArtifactCompression != 'none'
       run: |
         tar -xzvf ${{ inputs.buildArtifactName }}
         ls -la build
