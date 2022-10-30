@@ -30,25 +30,43 @@ runs:
         base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
         tags="${base}:latest"
 
+        ## Set semantic version as image tag if a GitHub tag
+        ## is created. Tag should follow semver format 'v[0-9]+.[0-9]+.[0-9]+'
+
         if [[ '${{ github.ref }}' == *"refs/tags/"* ]]; then
-        github_tag=$(echo "${GITHUB_REF#refs/*/}" | sed 's/^v//')
-        tags=$(cat <<END_HEREDOC
+          github_tag=$(echo "${GITHUB_REF#refs/*/}" | sed 's/^v//')
+          tags=$(cat <<END_HEREDOC
         ${base}:${github_tag}
-        ${base}:latest
         END_HEREDOC
         )
-        elif [[ '${{ github.event_name }}' == 'push' ]]; then
+
+        ## Set 'latest' image tag if 'main' or 'master' 
+        ## branch is pushed
+        ##
+        elif [[ '${{ github.ref }}' == 'refs/heads/master' || '${{ github.ref }}' == 'refs/heads/main' ]]; then
           tags=$(cat <<END_HEREDOC
-        ${base}:$(git rev-parse --short HEAD)
         ${base}:latest
         END_HEREDOC
           )
+        
+        ## Set short commit SHA and PR number as image tags
+        ## for the Pull Request pushed
+        ##
         elif [[ '${{ github.event_name }}' == 'pull_request' ]]; then
           tags=$(cat <<END_HEREDOC      
         ${base}:$(git rev-parse --short ${{ github.event.pull_request.head.sha }})
         ${base}:pr-${{ github.event.number }}
         END_HEREDOC
           )
+
+        ## Set short commit SHA as image tag for other cases
+        ##
+        elif [[ '${{ github.event_name }}' == 'push' ]]; then
+          tags=$(cat <<END_HEREDOC
+        ${base}:$(git rev-parse --short HEAD)
+        END_HEREDOC
+          )
+
         fi
 
         echo "[INFO] tags: ${tags}"
