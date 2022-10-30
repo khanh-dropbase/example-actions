@@ -5,11 +5,8 @@ inputs:
   appName:
     description: Your docker app name
     required: true
-  buildArtifactName:
-    description: Your build artifact name
-    required: true
   containerRegistryUrl:
-    description:  GCP container registry url
+    description: GCP container registry url
     required: false
     default: europe-west3-docker.pkg.dev
   containerRegistryGcpProject:
@@ -17,9 +14,9 @@ inputs:
     required: false
     default: my-project
 outputs:
-  greeting:
-    description: your greeting sentence
-    value: ${{ steps.say-hello.outputs.greeting }}
+  container_images:
+    description: Built container image url
+    value: ${{ steps.image-tags.outputs.tags }}
 runs:
   using: "composite"
   steps:
@@ -82,11 +79,8 @@ runs:
         echo "IMAGE_TAGS<<EOF" >> $GITHUB_ENV
         echo "$tags" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
-
-    - name: Download artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: ${{ inputs.buildArtifactName }}
+        
+        echo "tags=${tag}" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx for building docker images
       uses: docker/setup-buildx-action@v1
