@@ -2,64 +2,75 @@ name: Example composite action
 description: This is an example of creating composite action
 
 inputs:
-  name:
-    description: your lovely name
-    required: true
-  sayHello:
-    description: whether you want a greeting
-    required: false
   appName:
     description: your docker app name
     required: true
-  artifactName:
+  buildArtifactName:
     description: your build artifact
     required: true
+  buildArtifactCompression:
+    description: whether 'compressed' or 'none'
+    required: false
+    default: 'none'
 outputs:
   greeting:
     description: your greeting sentence
     value: ${{ steps.say-hello.outputs.greeting }}
-  artifact_content:
-    value: ${{ steps.read-artifact.outputs.artifact_content }}
 runs:
   using: "composite"
   steps:
-    - name: say hello
-      id: say-hello
-      if: inputs.sayHello == 'true'
+    - name: Prepare Image tags
+      id: image-tags
       shell: bash
       run: |
-        GREETING="Hello ${{ inputs.name }}"
-        echo "greeting=$GREETING" >> $GITHUB_OUTPUT
+        base="${CONTAINER_IMAGE_URL}"
+        tags="${base}:latest"
 
-    - name: download artifact
+        if [[ '${{ github.ref }}' == *"refs/tags/"* ]]; then
+        github_tag=$(echo "${GITHUB_REF#refs/*/}" | sed 's/^v//')
+        tags=$(cat <<END_HEREDOC
+        ${base}:${github_tag}
+        ${base}:latest
+        END_HEREDOC
+        )
+        elif [[ '${{ github.event_name }}' == 'push' ]]; then
+          tags=$(cat <<END_HEREDOC
+        ${base}:$(git rev-parse --short HEAD)
+        ${base}:latest
+        END_HEREDOC
+          )
+        elif [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+          tags=$(cat <<END_HEREDOC      
+        ${base}:$(git rev-parse --short ${{ github.event.pull_request.head.sha }})
+        ${base}:pr-${{ github.event.number }}
+        END_HEREDOC
+          )
+        fi
+
+        echo "[INFO] tags: ${tags}"
+
+        echo "IMAGE_TAGS<<EOF" >> $GITHUB_ENV
+        echo "$tags" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Download artifact
       uses: actions/download-artifact@v3
       with:
-        name: ${{ inputs.artifactName }}
+        name: ${{ inputs.buildArtifactName }}
 
-    - name: read artifact file
-      id: read-artifact
+    - name: Extract build artifact
       shell: bash
+      if: inputs.buildArtifactType != 'none'
       run: |
-        echo "artifact_content=$(cat ${{ inputs.artifactName }})" >> $GITHUB_OUTPUT
+        tar -xzvf ${{ inputs.buildArtifactName }}
+        ls -la build
 
     - name: Set up Docker Buildx for building docker images
       uses: docker/setup-buildx-action@v1
-
-    - name: Build and export to Docker
-      uses: docker/build-push-action@v3
-      with:
-        context: .
-        load: true
-        tags: myrepo/${{ inputs.appName }}:latest
-
-    - name: Test the docker image
-      shell: bash
-      run: |
-        docker run --rm myrepo/${{ inputs.appName }}:latest
 
     - name: Build and push docker image
       uses: docker/build-push-action@v3
       with:
         context: .
         push: false
-        tags: myrepo/${{ inputs.appName }}:latest
+        tags: ${{ env.IMAGE_TAGS }}

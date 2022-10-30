@@ -1,0 +1,65 @@
+name: Example composite action
+description: This is an example of creating composite action
+
+inputs:
+  name:
+    description: your lovely name
+    required: true
+  sayHello:
+    description: whether you want a greeting
+    required: false
+  appName:
+    description: your docker app name
+    required: true
+  artifactName:
+    description: your build artifact
+    required: true
+outputs:
+  greeting:
+    description: your greeting sentence
+    value: ${{ steps.say-hello.outputs.greeting }}
+  artifact_content:
+    value: ${{ steps.read-artifact.outputs.artifact_content }}
+runs:
+  using: "composite"
+  steps:
+    - name: say hello
+      id: say-hello
+      if: inputs.sayHello == 'true'
+      shell: bash
+      run: |
+        GREETING="Hello ${{ inputs.name }}"
+        echo "greeting=$GREETING" >> $GITHUB_OUTPUT
+
+    - name: download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ inputs.artifactName }}
+
+    - name: read artifact file
+      id: read-artifact
+      shell: bash
+      run: |
+        echo "artifact_content=$(cat ${{ inputs.artifactName }})" >> $GITHUB_OUTPUT
+
+    - name: Set up Docker Buildx for building docker images
+      uses: docker/setup-buildx-action@v1
+
+    - name: Build and export to Docker
+      uses: docker/build-push-action@v3
+      with:
+        context: .
+        load: true
+        tags: myrepo/${{ inputs.appName }}:latest
+
+    - name: Test the docker image
+      shell: bash
+      run: |
+        docker run --rm myrepo/${{ inputs.appName }}:latest
+
+    - name: Build and push docker image
+      uses: docker/build-push-action@v3
+      with:
+        context: .
+        push: false
+        tags: myrepo/${{ inputs.appName }}:latest
