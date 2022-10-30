@@ -14,7 +14,7 @@ inputs:
     required: false
     default: my-project
 outputs:
-  container_images:
+  containerImages:
     description: Built container image url
     value: ${{ steps.image-tags.outputs.tags }}
 runs:
