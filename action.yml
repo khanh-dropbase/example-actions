@@ -28,6 +28,8 @@ runs:
       shell: bash
       run: |
         base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
+        
+        # Default image tag is "latest"
         tags="${base}:latest"
 
         ## Set semantic version as image tag if a GitHub tag
@@ -69,11 +71,14 @@ runs:
 
         fi
 
-        echo "[INFO] tags: ${tags}"
-
+        ## Store image tags information in IMAGE_TAGS
+        ## environment variable
+        ##
         echo "IMAGE_TAGS<<EOF" >> $GITHUB_ENV
         echo "$tags" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
+
+        echo "[INFO] IMAGE_TAGS: ${{ env.IMAGE_TAGS }}"
 
     - name: Download artifact
       uses: actions/download-artifact@v3
