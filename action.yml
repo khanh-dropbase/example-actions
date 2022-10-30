@@ -80,7 +80,7 @@ runs:
         echo "$tags" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
         
-        echo "tags=${tag}" >> $GITHUB_OUTPUT
+        echo "tags=${tags}" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx for building docker images
       uses: docker/setup-buildx-action@v1
