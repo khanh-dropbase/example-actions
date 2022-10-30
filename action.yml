@@ -13,6 +13,10 @@ inputs:
     description: The GCP project of container image registry
     required: false
     default: my-project
+  buildCacheEnabled:
+    description: Enable caching in docker build
+    required: false
+    default: 'true'
 outputs:
   containerImages:
     description: Built container image url
@@ -82,11 +86,26 @@ runs:
     - name: Set up Docker Buildx for building docker images
       uses: docker/setup-buildx-action@v1
 
+    - name: Set Docker build cache list
+      id: set-build-cache
+      shell: bash
+      run: |
+        cache_from=""
+        cache_to=""
+        
+        if [[ '${{ inputs.buildCacheEnabled }}' == 'true' ]]; then
+          cache_from="type=registry,ref=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}:buildcache"
+          cache_to="type=registry,ref=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}:buildcache,mode=max"
+        fi
+
+        echo "cache_from=$cache_from" >> $GITHUB_OUTPUT
+        echo "cache_to=$cache_to" >> $GITHUB_OUTPUT
+
     - name: Build and push docker image
       uses: docker/build-push-action@v3
       with:
         context: .
         push: false
         tags: ${{ steps.image-tags.outputs.tags }}
-        cache-from: type=registry,ref=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}:buildcache
-        cache-to: type=registry,ref=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}:buildcache,mode=max
+        cache-from: ${{ inputs.set-build-cache.cache_from }}
+        cache-to: ${{ inputs.set-build-cache.cache_to }}
