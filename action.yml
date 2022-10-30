@@ -28,13 +28,14 @@ runs:
       shell: bash
       run: |
         base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
-        
-        # Default image tag is "latest"
+
+        ## Default image tag is "latest"
+        ##
         tags="${base}:latest"
 
         ## Set semantic version as image tag if a GitHub tag
         ## is created. Tag should follow semver format 'v[0-9]+.[0-9]+.[0-9]+'
-
+        ##
         if [[ '${{ github.ref }}' == *"refs/tags/"* ]]; then
           github_tag=$(echo "${GITHUB_REF#refs/*/}" | sed 's/^v//')
           tags=$(cat <<END_HEREDOC
@@ -71,14 +72,16 @@ runs:
 
         fi
 
+        ## Print tags for debugging purpose
+        ##
+        echo "[INFO] tags: ${tags}"
+
         ## Store image tags information in IMAGE_TAGS
         ## environment variable
         ##
         echo "IMAGE_TAGS<<EOF" >> $GITHUB_ENV
         echo "$tags" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
-
-        echo "[INFO] IMAGE_TAGS: ${{ env.IMAGE_TAGS }}"
 
     - name: Download artifact
       uses: actions/download-artifact@v3
