@@ -3,11 +3,19 @@ description: This is an example of creating composite action
 
 inputs:
   appName:
-    description: your docker app name
+    description: Your docker app name
     required: true
   buildArtifactName:
-    description: your build artifact
+    description: Your build artifact name
     required: true
+  containerRegistryUrl:
+    description:  GCP container registry url
+    required: false
+    default: europe-west3-docker.pkg.dev
+  containerRegistryGcpProject:
+    description: The GCP project that hosts our container image registry
+    required: false
+    default: flink-core-shared
 outputs:
   greeting:
     description: your greeting sentence
@@ -19,7 +27,7 @@ runs:
       id: image-tags
       shell: bash
       run: |
-        base="${CONTAINER_IMAGE_URL}"
+        base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
         tags="${base}:latest"
 
         if [[ '${{ github.ref }}' == *"refs/tags/"* ]]; then
