@@ -8,10 +8,6 @@ inputs:
   buildArtifactName:
     description: your build artifact
     required: true
-  buildArtifactCompression:
-    description: whether 'compressed' or 'none'
-    required: false
-    default: 'none'
 outputs:
   greeting:
     description: your greeting sentence
@@ -57,13 +53,6 @@ runs:
       uses: actions/download-artifact@v3
       with:
         name: ${{ inputs.buildArtifactName }}
-
-    - name: Extract build artifact
-      shell: bash
-      if: inputs.buildArtifactCompression != 'none'
-      run: |
-        tar -xzvf ${{ inputs.buildArtifactName }}
-        ls -la build
 
     - name: Set up Docker Buildx for building docker images
       uses: docker/setup-buildx-action@v1
