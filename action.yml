@@ -40,7 +40,7 @@ runs:
       id: image-tags
       shell: bash
       run: |
-        if [[ '${{ inputs.buildTags }}' == 'auto' ]]; then
+        if [[ "${{ inputs.buildTags }}" == "auto" ]]; then
           base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
 
           ## Default image tag is 'latest'
