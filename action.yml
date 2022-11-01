@@ -40,7 +40,11 @@ runs:
       id: image-tags
       shell: bash
       run: |
-        input_tags="${{ inputs.buildTags }}"
+        input_tags=$(cat <<END_HEREDOC
+        ${{ inputs.buildTags }}
+        END_HEREDOC
+          )
+
         if [[ "${input_tags}" == "auto" ]]; then
           base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
 
