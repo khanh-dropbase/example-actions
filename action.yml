@@ -13,22 +13,10 @@ inputs:
     description: The GCP project of container image registry
     required: false
     default: my-project
-  buildTags:
-    description: List of tags
-    required: false
-    default: auto
   buildCacheEnabled:
     description: Enable build cache
     required: false
     default: 'true'
-  buildCacheFrom:
-    description: List of external cache sources
-    required: false
-    default: auto
-  buildCacheTo:
-    description: List of cache export destinations
-    required: false
-    default: auto
 outputs:
   containerImages:
     description: Built container image url
@@ -40,60 +28,50 @@ runs:
       id: image-tags
       shell: bash
       run: |
-        input_tags=$(cat <<END_HEREDOC
-        ${{ inputs.buildTags }}
+        base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
+
+        ## Default image tag is 'latest'
+        ##
+        tags="${base}:latest"
+
+        ## Set semantic version as image tag if a GitHub tag
+        ## is created. Tag should follow semver format 'v[0-9]+.[0-9]+.[0-9]+'
+        ##
+        if [[ '${{ github.ref }}' == *"refs/tags/"* ]]; then
+          github_tag=$(echo "${GITHUB_REF#refs/*/}" | sed 's/^v//')
+          tags=$(cat <<END_HEREDOC
+        ${base}:${github_tag}
+        END_HEREDOC
+        )
+
+        ## Set 'latest' image tag if 'main' or 'master'q
+        ## branch is pushed
+        ##
+        elif [[ '${{ github.ref }}' == 'refs/heads/master' || '${{ github.ref }}' == 'refs/heads/main' ]]; then
+          tags=$(cat <<END_HEREDOC
+        ${base}:latest
         END_HEREDOC
           )
 
-        if [[ "${input_tags}" == "auto" ]]; then
-          base=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}
-
-          ## Default image tag is 'latest'
-          ##
-          tags="${base}:latest"
-
-          ## Set semantic version as image tag if a GitHub tag
-          ## is created. Tag should follow semver format 'v[0-9]+.[0-9]+.[0-9]+'
-          ##
-          if [[ '${{ github.ref }}' == *"refs/tags/"* ]]; then
-            github_tag=$(echo "${GITHUB_REF#refs/*/}" | sed 's/^v//')
-            tags=$(cat <<END_HEREDOC
-          ${base}:${github_tag}
-          END_HEREDOC
+        ## Set short commit SHA and PR number as image tags
+        ## for the Pull Request pushed
+        ##
+        elif [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+          tags=$(cat <<END_HEREDOC
+        ${base}:$(git rev-parse --short ${{ github.event.pull_request.head.sha }})
+        ${base}:pr-${{ github.event.number }}
+        END_HEREDOC
           )
 
-          ## Set 'latest' image tag if 'main' or 'master'q
-          ## branch is pushed
-          ##
-          elif [[ '${{ github.ref }}' == 'refs/heads/master' || '${{ github.ref }}' == 'refs/heads/main' ]]; then
-            tags=$(cat <<END_HEREDOC
-          ${base}:latest
-          END_HEREDOC
-            )
+        ## Set short commit SHA as image tag for other cases
+        ##
+        elif [[ '${{ github.event_name }}' == 'push' ]]; then
+          tags=$(cat <<END_HEREDOC
+        ${base}:$(git rev-parse --short HEAD)
+        END_HEREDOC
+          )
 
-          ## Set short commit SHA and PR number as image tags
-          ## for the Pull Request pushed
-          ##
-          elif [[ '${{ github.event_name }}' == 'pull_request' ]]; then
-            tags=$(cat <<END_HEREDOC
-          ${base}:$(git rev-parse --short ${{ github.event.pull_request.head.sha }})
-          ${base}:pr-${{ github.event.number }}
-          END_HEREDOC
-            )
-
-          ## Set short commit SHA as image tag for other cases
-          ##
-          elif [[ '${{ github.event_name }}' == 'push' ]]; then
-            tags=$(cat <<END_HEREDOC
-          ${base}:$(git rev-parse --short HEAD)
-          END_HEREDOC
-            )
-
-          fi
-
-        else
-          tags=${input_tags}
-
+        fi
 
         ## Print tags for debugging purpose
         ##
@@ -116,17 +94,8 @@ runs:
         cache_to=""
 
         if [[ '${{ inputs.buildCacheEnabled }}' == 'true' ]]; then
-          if [[ '${{ inputs.buildCacheFrom }}' == 'auto' ]]; then
             cache_from="type=registry,ref=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}:buildcache"
-          else
-            cache_from="${{ inputs.buildCacheFrom }}"
-          fi
-        
-          if [[ '${{ inputs.buildCacheTo }}' == 'auto' ]]; then
             cache_to="type=registry,ref=${{ inputs.containerRegistryUrl }}/${{ inputs.containerRegistryGcpProject }}/${{ inputs.appName }}/${{ inputs.appName }}:buildcache,mode=max"
-          else
-            cache_to="${{ inputs.buildCacheTo }}"
-          fi
         fi
 
         echo "cache_from=$cache_from" >> $GITHUB_OUTPUT
